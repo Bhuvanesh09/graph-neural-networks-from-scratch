@@ -5,7 +5,7 @@ import torch.nn
 
 
 class BaseGnn(pl.LightningModule):
-    def __init__(self, num_layers, latent_dim, input_dim, output_dim):
+    def __init__(self, num_layers, input_dim, latent_dim, output_dim):
         super().__init__()
         self.num_layers = num_layers
         self.latent_dim = latent_dim
