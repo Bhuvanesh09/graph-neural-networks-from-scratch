@@ -15,10 +15,10 @@ class BaseGnn(pl.LightningModule):
     def initialize(self, nodes_feats):
         raise NotImplementedError
 
-    def aggregate(self, friends_feats):
+    def aggregate(self, friends_feats, idx):
         raise NotImplementedError
 
-    def combine(self, node_feat, message):
+    def combine(self, node_feat, message, idx):
         raise NotImplementedError
 
     def output(self, final_features):

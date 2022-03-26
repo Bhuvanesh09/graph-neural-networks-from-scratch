@@ -30,3 +30,21 @@ class Gcn(BaseGnn):
             )
 
         self.f = torch.nn.ReLU()
+
+    def initialize(self, nodes_feats):
+        return self.init(nodes_feats)
+
+    def aggregate(self, friends_feats, idx):
+        # GCN has mean of the features as its aggregation
+        return torch.mean(friends_feats, dim=0)
+
+    def combine(self, node_feat, message, idx):
+        w, b = self.layers[idx]
+        return self.f(
+            w(message) + b(node_feat)
+        )
+
+    def output(self, final_features):
+        # Unlike chemistry applications pooling is not reqd since we are
+        # doing node level classification
+        return self.final_layer(final_features)
