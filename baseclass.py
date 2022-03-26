@@ -11,6 +11,7 @@ class BaseGnn(pl.LightningModule):
         self.latent_dim = latent_dim
         self.input_dim = input_dim
         self.output_dim = output_dim
+        self.loss_fn = torch.nn.CrossEntropyLoss()
 
     def initialize(self, nodes_feats):
         raise NotImplementedError
@@ -31,18 +32,46 @@ class BaseGnn(pl.LightningModule):
             friends_combined = [[]] * nodes_feats.shape[0]
 
             for (fro, to) in adj_list:
-                friends_combined[to].append(adj_list[fro])
+                friends_combined[to].append(latent_nodes[fro])
 
             out = torch.zeros((nodes_feats.shape[0], self.latent_dim))
 
             for i in range(nodes_feats.shape[0]):
                 friends = torch.stack(friends_combined[i])
-                message = self.aggregate(friends)
-                out[i] = self.combine(latent_nodes[i], message)
+                message = self.aggregate(friends, idx)
+                out[i] = self.combine(latent_nodes[i], message, idx)
 
                 latent_nodes = out
 
         out = self.output(latent_nodes)
         return out
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
+        return optimizer
+
+
+    def training_step(self, data):
+        data = data[0]
+        node_features = data.x
+        adj_list = data.edge_index.T
+        y = data.y
+        out = self.forward(node_features, adj_list)
+
+        train_out = out[data.train_mask]
+        train_y = y[data.train_mask]
+
+        loss = self.loss_fn(train_out, train_y)
+        self.log("train_loss", loss)
+
+        val_out = out[data.val_mask]
+        val_y = y[data.val_mask]
+
+        loss2 = self.loss_fn(val_out, val_y)
+
+        self.log("val_loss", loss2)
+        return loss
+
+
 
 

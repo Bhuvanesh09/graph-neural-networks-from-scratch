@@ -39,7 +39,7 @@ class Gcn(BaseGnn):
         return torch.mean(friends_feats, dim=0)
 
     def combine(self, node_feat, message, idx):
-        w, b = self.layers[idx]
+        w, b = self.layers[idx]["w"], self.layers[idx]["b"]
         return self.f(
             w(message) + b(node_feat)
         )
