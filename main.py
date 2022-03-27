@@ -5,6 +5,8 @@ from tqdm import tqdm
 from gcn import Gcn
 from gin import Gin
 from torch.utils.data import Dataset, DataLoader
+import argparse
+
 
 
 class GraphData(Dataset):
@@ -36,8 +38,8 @@ def accuracy(probs, y):
     return torch.mean(bools) * 100
 
 
-def train_gcn():
-    model = Gcn(2, 3703, 7, 7)
+def train_gcn(num_layers, latent_dim):
+    model = Gcn(num_layers, 3703, latent_dim, 7)
     optim = torch.optim.Adam(model.parameters(), lr=1e-2)
     loss_fun = torch.nn.CrossEntropyLoss()
 
@@ -55,9 +57,9 @@ def train_gcn():
         optim.step()
         print("Train Loss:", float(loss))
 
-def train_gin():
+def train_gin(num_layers, latent_dim):
 
-    model = Gin(2, 3703, 7, 7)
+    model = Gin(num_layers, 3703, latent_dim, 7)
     optim = torch.optim.Adam(model.parameters(), lr=1e-2)
     loss_fun = torch.nn.CrossEntropyLoss()
 
@@ -76,4 +78,25 @@ def train_gin():
         print("Train Loss:", float(loss))
 
 if __name__== "__main__":
-    train_gin()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--task", default="gcn", help="Options: {gcn, gin}"
+    )
+    parser.add_argument(
+        "--layers", default=3, type=int
+    )
+    parser.add_argument(
+        "--dims", default=12, type=int, help="Latent dimension"
+    )
+    parser.add_argument(
+        "--normalizer",
+        default="row",
+        type=str,
+        help="Normalization method (row, col, symm)",
+    )
+    args = parser.parse_args()
+
+    if args.task == "gcn":
+        train_gcn(args.layers, args.dims)
+    elif args.task == "gin":
+        train_gin(args.layers, args.dims)
