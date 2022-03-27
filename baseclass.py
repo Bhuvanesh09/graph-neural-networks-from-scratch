@@ -5,7 +5,7 @@ from tqdm import tqdm
 import torch.nn
 
 
-class BaseGnn(pl.LightningModule):
+class BaseGnn(torch.nn.Module):
     def __init__(self, num_layers, input_dim, latent_dim, output_dim):
         super().__init__()
         self.num_layers = num_layers
@@ -35,7 +35,7 @@ class BaseGnn(pl.LightningModule):
             for (fro, to) in adj_list:
                 friends_combined[to].append(latent_nodes[fro])
 
-            out = torch.zeros((nodes_feats.shape[0], self.latent_dim), device=self.device)
+            out = torch.zeros((nodes_feats.shape[0], self.latent_dim))
 
             for i in range(nodes_feats.shape[0]):
                 friends = torch.stack(friends_combined[i])
@@ -48,11 +48,13 @@ class BaseGnn(pl.LightningModule):
         return final_out
 
     def configure_optimizers(self):
+        pass
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
         return optimizer
 
 
     def training_step(self, data):
+        pass
         data = data[0]
         node_features, adj_list, y, train_mask, val_mask = data
         node_features = node_features.to(self.device)
