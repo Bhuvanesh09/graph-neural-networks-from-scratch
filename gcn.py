@@ -9,7 +9,7 @@ class Gcn(BaseGnn):
 
         self.init = torch.nn.Sequential(
             torch.nn.Linear(input_dim, latent_dim),
-            torch.nn.ReLU()
+            torch.nn.ReLU(inplace=False)
         )
 
         self.final_layer = torch.nn.Sequential(
@@ -29,7 +29,7 @@ class Gcn(BaseGnn):
                 })
             )
 
-        self.f = torch.nn.ReLU()
+        self.f = torch.nn.ReLU(inplace=False)
 
     def initialize(self, nodes_feats):
         return self.init(nodes_feats)

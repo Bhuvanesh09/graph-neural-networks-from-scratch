@@ -1,6 +1,7 @@
 import pytorch_lightning as pl
 import numpy as np
 import torch
+from tqdm import tqdm
 import torch.nn
 
 
@@ -28,23 +29,23 @@ class BaseGnn(pl.LightningModule):
     def forward(self, nodes_feats, adj_list):
         latent_nodes = self.initialize(nodes_feats)
 
-        for idx, layer in enumerate(self.layers):
+        for idx in tqdm(range(self.num_layers)):
             friends_combined = [[]] * nodes_feats.shape[0]
 
             for (fro, to) in adj_list:
                 friends_combined[to].append(latent_nodes[fro])
 
-            out = torch.zeros((nodes_feats.shape[0], self.latent_dim))
+            out = torch.zeros((nodes_feats.shape[0], self.latent_dim), device=self.device)
 
             for i in range(nodes_feats.shape[0]):
                 friends = torch.stack(friends_combined[i])
                 message = self.aggregate(friends, idx)
                 out[i] = self.combine(latent_nodes[i], message, idx)
 
-                latent_nodes = out
+            latent_nodes = out
 
-        out = self.output(latent_nodes)
-        return out
+        final_out = self.output(latent_nodes)
+        return final_out
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
@@ -53,23 +54,26 @@ class BaseGnn(pl.LightningModule):
 
     def training_step(self, data):
         data = data[0]
-        node_features = data.x
-        adj_list = data.edge_index.T
-        y = data.y
+        node_features, adj_list, y, train_mask, val_mask = data
+        node_features = node_features.to(self.device)
+        adj_list = adj_list.to(self.device)
+        y = y.to(self.device)
+        # node_features = data.x
+        adj_list = adj_list.T
         out = self.forward(node_features, adj_list)
 
-        train_out = out[data.train_mask]
-        train_y = y[data.train_mask]
+        train_out = out[train_mask]
+        train_y = y[train_mask]
 
         loss = self.loss_fn(train_out, train_y)
         self.log("train_loss", loss)
 
-        val_out = out[data.val_mask]
-        val_y = y[data.val_mask]
+        # val_out = out[val_mask]
+        # val_y = y[val_mask]
 
-        loss2 = self.loss_fn(val_out, val_y)
+        # loss2 = self.loss_fn(val_out, val_y)
 
-        self.log("val_loss", loss2)
+        # self.log("val_loss", loss2)
         return loss
 
 

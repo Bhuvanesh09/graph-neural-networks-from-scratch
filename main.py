@@ -1,7 +1,9 @@
 import torch_geometric as pyg
+import torch
 import pytorch_lightning as pl
 from gcn import Gcn
 from torch.utils.data import Dataset, DataLoader
+
 
 class GraphData(Dataset):
     def __init__(self, df):
@@ -11,16 +13,17 @@ class GraphData(Dataset):
         return 1
 
     def __getitem__(self, item):
-        return self.df
+        return (self.df.x, self.df.edge_index, self.df.y, self.df.train_mask, self.df.val_mask)
+
 
 df = pyg.datasets.Planetoid("datasets/planetoid", "citeseer")
 
-model = Gcn(2, 3703, 20, 7)
+model = Gcn(2, 3703, 7, 7)
 
-trainer = pl.Trainer()
+trainer = pl.Trainer(gpus=1)
 data = df.data
 # data = (data.x, data.edge_list, )
 data = GraphData(data)
 loader = DataLoader(data, batch_size=1, collate_fn=lambda x: x)
-
+torch.autograd.set_detect_anomaly(True)
 trainer.fit(model, loader)
