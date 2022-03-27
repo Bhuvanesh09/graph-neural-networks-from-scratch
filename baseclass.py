@@ -6,8 +6,9 @@ import torch.nn
 
 
 class BaseGnn(torch.nn.Module):
-    def __init__(self, num_layers, input_dim, latent_dim, output_dim):
+    def __init__(self, num_layers, input_dim, latent_dim, output_dim, norm_method="row"):
         super().__init__()
+        self.norm_method = norm_method
         self.num_layers = num_layers
         self.latent_dim = latent_dim
         self.input_dim = input_dim
@@ -26,14 +27,29 @@ class BaseGnn(torch.nn.Module):
     def output(self, final_features):
         raise NotImplementedError
 
+    def normalizer(self, u_d, v_d):
+        u_d, v_d = u_d + 1, v_d + 1
+
+        if self.norm_method == "row":
+            return u_d
+        elif self.norm_method == "col":
+            return v_d
+        elif self.norm_method == "symm":
+            return (u_d * v_d) ** 0.5
+        else:
+            return 1
+
     def forward(self, nodes_feats, adj_list):
         latent_nodes = self.initialize(nodes_feats)
 
         for idx in range(self.num_layers):
             friends_combined = [[]] * nodes_feats.shape[0]
 
+            d = np.zeros(nodes_feats.shape[0])
             for (fro, to) in adj_list:
-                friends_combined[to].append(latent_nodes[fro])
+                d[fro] += 1
+            for (fro, to) in adj_list:
+                friends_combined[fro].append(latent_nodes[to]/self.normalizer(d[fro], d[to]))
 
             out = torch.zeros((nodes_feats.shape[0], self.latent_dim))
 
