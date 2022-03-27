@@ -29,6 +29,12 @@ model = Gcn(2, 3703, 7, 7)
 # torch.autograd.set_detect_anomaly(True)
 # trainer.fit(model, loader)
 
+def accuracy(probs, y):
+    pred = torch.argmax(probs, dim=1)
+    bools = torch.eq(pred, y).float()
+    return torch.mean(bools) * 100
+
+
 def train_gcn():
     optim = torch.optim.Adam(model.parameters(), lr=1e-2)
     loss_fun = torch.nn.CrossEntropyLoss()
@@ -40,6 +46,10 @@ def train_gcn():
         train_mask, val_mask = df.data.train_mask, df.data.val_mask
         loss = loss_fun(out[train_mask], df.data.y[train_mask])
         loss.backward()
+
+        print("Epoch {}, Train Accuracy: {}, Val Accuracy: {}".format(ep,
+                                                                      accuracy(out[train_mask], df.data.y[train_mask]),
+                                                                      accuracy(out[val_mask], df.data.y[val_mask])))
         optim.step()
 
         print("Train Loss:", loss)

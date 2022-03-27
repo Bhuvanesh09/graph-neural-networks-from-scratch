@@ -29,7 +29,7 @@ class BaseGnn(torch.nn.Module):
     def forward(self, nodes_feats, adj_list):
         latent_nodes = self.initialize(nodes_feats)
 
-        for idx in tqdm(range(self.num_layers)):
+        for idx in range(self.num_layers):
             friends_combined = [[]] * nodes_feats.shape[0]
 
             for (fro, to) in adj_list:
