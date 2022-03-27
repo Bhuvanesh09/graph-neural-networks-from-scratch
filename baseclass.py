@@ -54,7 +54,10 @@ class BaseGnn(torch.nn.Module):
             out = torch.zeros((nodes_feats.shape[0], self.latent_dim))
 
             for i in range(nodes_feats.shape[0]):
-                friends = torch.stack(friends_combined[i])
+                if len(friends_combined[i]):
+                    friends = torch.stack(friends_combined[i])
+                else:
+                    friends = torch.zeros((1, self.latent_dim))
                 message = self.aggregate(friends, idx)
                 out[i] = self.combine(latent_nodes[i], message, idx)
 
@@ -67,7 +70,6 @@ class BaseGnn(torch.nn.Module):
         pass
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
         return optimizer
-
 
     def training_step(self, data):
         pass
